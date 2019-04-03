@@ -19,7 +19,7 @@ import java.util.List;
 /**
  * 作者： ch
  * 时间： 2019/3/22 0022-上午 11:51
- * 描述：
+ * 描述： 播放管理器
  * 来源：
  */
 
@@ -37,7 +37,8 @@ public class MusicManager {
             MusicModel musicModel = QueueManager.getInstance().next();
 
             if (musicModel != null) {
-                MusicManager.getInstance().play(musicModel);
+                //播放下一首
+                play(musicModel);
             }
 
 
@@ -45,10 +46,9 @@ public class MusicManager {
                 return;
             }
             for (MusicUpdataListener listener : updataListeners) {
-                if (listener == null) {
-                    return;
+                if (listener != null) {
+                    listener.onCompletion(mediaPlayer);
                 }
-                listener.onCompletion(mediaPlayer);
             }
         }
 
@@ -58,10 +58,9 @@ public class MusicManager {
                 return;
             }
             for (MusicUpdataListener listener : updataListeners) {
-                if (listener == null) {
-                    return;
+                if (listener != null) {
+                    listener.onBufferingUpdate(mediaPlayer, percent);
                 }
-                listener.onBufferingUpdate(mediaPlayer, percent);
             }
         }
 
@@ -71,10 +70,9 @@ public class MusicManager {
                 return;
             }
             for (MusicUpdataListener listener : updataListeners) {
-                if (listener == null) {
-                    return;
+                if (listener != null) {
+                    listener.onProgress(progress, duration);
                 }
-                listener.onProgress(progress, duration);
             }
         }
 
@@ -85,10 +83,9 @@ public class MusicManager {
                 return;
             }
             for (MusicUpdataListener listener : updataListeners) {
-                if (listener == null) {
-                    return;
+                if (listener != null) {
+                    listener.startPlay(model);
                 }
-                listener.startPlay(model);
             }
         }
 
@@ -98,10 +95,9 @@ public class MusicManager {
                 return;
             }
             for (MusicUpdataListener listener : updataListeners) {
-                if (listener == null) {
-                    return;
+                if (listener != null) {
+                    listener.realPlay(model);
                 }
-                listener.realPlay(model);
             }
         }
 
@@ -111,10 +107,9 @@ public class MusicManager {
                 return;
             }
             for (MusicUpdataListener listener : updataListeners) {
-                if (listener == null) {
-                    return;
+                if (listener != null) {
+                    listener.onPause();
                 }
-                listener.onPause();
             }
         }
     };
@@ -160,7 +155,7 @@ public class MusicManager {
 
 
     public void removeUpdataListener(MusicUpdataListener listener) {
-        if (updataListeners != null && updataListeners.contains(listener)) {
+        if (updataListeners != null) {
             updataListeners.remove(listener);
         }
 
@@ -187,6 +182,7 @@ public class MusicManager {
     public void startService() {
         MyApp myApp = MyApp.getMyApp();
         Intent intent = new Intent(myApp, MusicService.class);
+        intent.setAction(MusicService.ACTION_START);
         myApp.startService(intent);
     }
 

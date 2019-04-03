@@ -1,7 +1,10 @@
 package com.ch.cmusic.service;
 
 import android.app.Service;
+import android.bluetooth.BluetoothHeadset;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Binder;
 import android.os.IBinder;
@@ -9,8 +12,11 @@ import android.text.TextUtils;
 
 import com.ch.cmusic.LogUtils;
 import com.ch.cmusic.model.MusicModel;
+import com.ch.cmusic.recever.BecomingNoisyReceiver;
 
 import java.io.IOException;
+
+import static android.media.session.PlaybackState.STATE_PLAYING;
 
 /**
  * 作者： ch
@@ -25,6 +31,8 @@ public class MusicService extends Service {
     private int state;
     private MusicModel currentMusic;
     private MusicUpdataListener updataListener;
+    private BecomingNoisyReceiver becomingNoisyReceiver;
+    private IntentFilter intentFilter;
 
     public void setUpdataListener(MusicUpdataListener updataListener) {
         this.updataListener = updataListener;
@@ -46,6 +54,11 @@ public class MusicService extends Service {
      * 停止
      */
     public final static int STATE_STOPPED = 3;
+
+    public static final String ACTION_START = "start";
+    public static final String ACTION_PLAY = "play";
+    public static final String ACTION_PAUSE = "pause";
+
 
     @Override
 
@@ -72,6 +85,7 @@ public class MusicService extends Service {
             }
         });
 
+
         mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
             @Override
             public void onCompletion(MediaPlayer mp) {
@@ -80,13 +94,43 @@ public class MusicService extends Service {
                 }
             }
         });
+
+        becomingNoisyReceiver = new BecomingNoisyReceiver();
+        //有线耳机
+        intentFilter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
+        //蓝牙耳机
+//        intentFilter.addAction(BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED);
+
         setState(STATE_NONE);
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        switch (intent.getAction()) {
+            case ACTION_START:
+                if (state == STATE_PLAYING) {
+                    start();
+                    if (updataListener != null && currentMusic != null) {
+                        updataListener.startPlay(currentMusic);
+                    }
+                }
+                break;
+            case ACTION_PAUSE:
+                pause();
+                break;
+        }
+
+        return START_NOT_STICKY;
     }
 
     /**
      * 开始播放
      */
     public void start() {
+        if (currentMusic == null) {
+            return;
+        }
+        registerReceiver(becomingNoisyReceiver, intentFilter);
         // 装载完毕回调
         setState(STATE_PLAYING);
         mediaPlayer.start();
@@ -103,6 +147,7 @@ public class MusicService extends Service {
         if (state == STATE_PLAYING) {
             mediaPlayer.pause();
             setState(STATE_PAUSED);
+            unregisterReceiver(becomingNoisyReceiver);
             if (updataListener != null) {
                 updataListener.onPause();
             }
@@ -127,6 +172,7 @@ public class MusicService extends Service {
      * 退出
      */
     public void quit() {
+        unregisterReceiver(becomingNoisyReceiver);
         mediaPlayer.reset();
         mediaPlayer.release();
         currentMusic = null;
@@ -136,8 +182,6 @@ public class MusicService extends Service {
 
     /**
      * 进度
-     *
-     * @param pos
      */
     public void seekto(long pos) {
         if (state == STATE_PLAYING || state == STATE_PAUSED) {
@@ -155,8 +199,6 @@ public class MusicService extends Service {
 
     /**
      * 当前的播放进度
-     *
-     * @return
      */
     public long getCurrentProgress() {
         if (mediaPlayer == null || getState() == STATE_STOPPED || getState() == STATE_NONE) {
@@ -168,8 +210,6 @@ public class MusicService extends Service {
 
     /**
      * 播放
-     *
-     * @param model
      */
     public void play(MusicModel model) {
         if (model == null || TextUtils.isEmpty(model.getPath())) {
@@ -201,8 +241,6 @@ public class MusicService extends Service {
 
     /**
      * 设置状态
-     *
-     * @param state
      */
     private void setState(int state) {
         this.state = state;

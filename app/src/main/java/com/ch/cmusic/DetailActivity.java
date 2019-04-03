@@ -1,8 +1,10 @@
 package com.ch.cmusic;
 
+import android.annotation.SuppressLint;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -51,6 +53,7 @@ public class DetailActivity extends AppCompatActivity {
     TextView tvPlayList;
     @BindView(R.id.ll_play)
     LinearLayout llPlay;
+    private boolean mIsTouching;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,8 +78,10 @@ public class DetailActivity extends AppCompatActivity {
 
             @Override
             public void onProgress(int progress, int duration) {
-                sbAudio.setMax(duration);
-                sbAudio.setProgress(progress);
+                if (!mIsTouching) {
+                    sbAudio.setMax(duration);
+                    sbAudio.setProgress(progress);
+                }
             }
 
 
@@ -113,6 +118,24 @@ public class DetailActivity extends AppCompatActivity {
                 MusicManager.getInstance().seekTo(seekBar.getProgress());
             }
         });
+
+        sbAudio.setOnTouchListener(new View.OnTouchListener() {
+            @SuppressLint("ClickableViewAccessibility")
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        mIsTouching = true;
+                        break;
+                    case MotionEvent.ACTION_UP:
+                    case MotionEvent.ACTION_CANCEL:
+                        mIsTouching = false;
+                }
+
+                return false;
+            }
+        });
+
 
     }
 

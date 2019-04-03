@@ -67,7 +67,6 @@ public class QueueManager {
     /**
      * 添加
      *
-     * @param model
      */
     public void addMusic(MusicModel model) {
         checkNull();
@@ -84,7 +83,6 @@ public class QueueManager {
     /**
      * 添加
      *
-     * @param list
      */
     public void addMusic(List<MusicModel> list) {
         checkNull();
@@ -94,7 +92,6 @@ public class QueueManager {
     /**
      * 上一个
      *
-     * @return
      */
     public MusicModel before() {
         checkNull();
@@ -125,7 +122,6 @@ public class QueueManager {
     /**
      * 下一个
      *
-     * @return
      */
     public MusicModel next() {
         checkNull();
